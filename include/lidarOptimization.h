@@ -9,11 +9,13 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-void getTransformFromSe3(const Eigen::Matrix<double,6,1>& se3, Eigen::Quaterniond& q, Eigen::Vector3d& t);
+// utils_tool
+#include "utils_tool_class.hpp"
 
 Eigen::Matrix3d skew(Eigen::Vector3d& mat_in);
 
-class EdgeAnalyticCostFunction : public ceres::SizedCostFunction<1, 7> {
+// class EdgeAnalyticCostFunction : public ceres::SizedCostFunction<1, 7> {
+class EdgeAnalyticCostFunction : public ceres::SizedCostFunction<1, 6> {
 	public:
 
 		EdgeAnalyticCostFunction(Eigen::Vector3d curr_point_, Eigen::Vector3d last_point_a_, Eigen::Vector3d last_point_b_);
@@ -25,7 +27,8 @@ class EdgeAnalyticCostFunction : public ceres::SizedCostFunction<1, 7> {
 		Eigen::Vector3d last_point_b;
 };
 
-class SurfNormAnalyticCostFunction : public ceres::SizedCostFunction<1, 7> {
+// class SurfNormAnalyticCostFunction : public ceres::SizedCostFunction<1, 7> {
+class SurfNormAnalyticCostFunction : public ceres::SizedCostFunction<1, 6> {
 	public:
 		SurfNormAnalyticCostFunction(Eigen::Vector3d curr_point_, Eigen::Vector3d plane_unit_norm_, double negative_OA_dot_norm_);
 		virtual ~SurfNormAnalyticCostFunction() {}
@@ -43,7 +46,7 @@ public:
     virtual ~PoseSE3Parameterization() {}
     virtual bool Plus(const double* x, const double* delta, double* x_plus_delta) const;
     virtual bool ComputeJacobian(const double* x, double* jacobian) const;
-    virtual int GlobalSize() const { return 7; }
+    virtual int GlobalSize() const { return 6; }
     virtual int LocalSize() const { return 6; }
 };
 

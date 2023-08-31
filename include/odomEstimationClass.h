@@ -33,6 +33,9 @@
 #include "lidarOptimization.h"
 #include <ros/ros.h>
 
+// utils_tool
+#include "utils_tool_class.hpp"
+
 class OdomEstimationClass 
 {
 
@@ -49,9 +52,7 @@ class OdomEstimationClass
 		pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudSurfMap;
 	private:
 		//optimization variable
-		double parameters[7] = {0, 0, 0, 1, 0, 0, 0};
-		Eigen::Map<Eigen::Quaterniond> q_w_curr = Eigen::Map<Eigen::Quaterniond>(parameters);
-		Eigen::Map<Eigen::Vector3d> t_w_curr = Eigen::Map<Eigen::Vector3d>(parameters + 4);
+		double parameters_xi[6];  // {t_x,t_y,t_z,phi_x,phi_y,phi_z}  lie  
 
 		Eigen::Isometry3d last_odom;
 

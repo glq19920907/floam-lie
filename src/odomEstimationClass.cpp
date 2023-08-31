@@ -18,6 +18,7 @@ void OdomEstimationClass::init(lidar::Lidar lidar_param, double map_resolution){
     kdtreeSurfMap = pcl::KdTreeFLANN<pcl::PointXYZI>::Ptr(new pcl::KdTreeFLANN<pcl::PointXYZI>());
 
     odom = Eigen::Isometry3d::Identity();
+    utils_tool_transform::Isometry3dToArray(odom, parameters_xi);
     last_odom = Eigen::Isometry3d::Identity();
     optimization_count=2;
 }
@@ -38,8 +39,7 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI
     last_odom = odom;
     odom = odom_prediction;
 
-    q_w_curr = Eigen::Quaterniond(odom.rotation());
-    t_w_curr = odom.translation();
+    utils_tool_transform::Isometry3dToArray(odom, parameters_xi);
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr downsampledEdgeCloud(new pcl::PointCloud<pcl::PointXYZI>());
     pcl::PointCloud<pcl::PointXYZI>::Ptr downsampledSurfCloud(new pcl::PointCloud<pcl::PointXYZI>());
@@ -54,7 +54,7 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI
             ceres::Problem::Options problem_options;
             ceres::Problem problem(problem_options);
 
-            problem.AddParameterBlock(parameters, 7, new PoseSE3Parameterization());
+            problem.AddParameterBlock(parameters_xi, 6, new PoseSE3Parameterization()); // change Quaternion to Lie algebra
             
             addEdgeCostFactor(downsampledEdgeCloud,laserCloudCornerMap,problem,loss_function);
             addSurfCostFactor(downsampledSurfCloud,laserCloudSurfMap,problem,loss_function);
@@ -74,8 +74,9 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI
         printf("not enough points in map to associate, map error");
     }
     odom = Eigen::Isometry3d::Identity();
-    odom.linear() = q_w_curr.toRotationMatrix();
-    odom.translation() = t_w_curr;
+
+    utils_tool_transform::ArrayToIsometry3d(parameters_xi, odom);
+    
     addPointsToMap(downsampledEdgeCloud,downsampledSurfCloud);
 
 }
@@ -83,7 +84,10 @@ void OdomEstimationClass::updatePointsToMap(const pcl::PointCloud<pcl::PointXYZI
 void OdomEstimationClass::pointAssociateToMap(pcl::PointXYZI const *const pi, pcl::PointXYZI *const po)
 {
     Eigen::Vector3d point_curr(pi->x, pi->y, pi->z);
-    Eigen::Vector3d point_w = q_w_curr * point_curr + t_w_curr;
+    Eigen::Isometry3d trans = Eigen::Isometry3d::Identity();
+    utils_tool_transform::ArrayToIsometry3d(parameters_xi, trans);
+    Eigen::Vector3d point_w = trans * point_curr;
+
     po->x = point_w.x();
     po->y = point_w.y();
     po->z = point_w.z();
@@ -141,7 +145,7 @@ void OdomEstimationClass::addEdgeCostFactor(const pcl::PointCloud<pcl::PointXYZI
                 point_b = -0.1 * unit_direction + point_on_line;
 
                 ceres::CostFunction *cost_function = new EdgeAnalyticCostFunction(curr_point, point_a, point_b);  
-                problem.AddResidualBlock(cost_function, loss_function, parameters);
+                problem.AddResidualBlock(cost_function, loss_function, parameters_xi);
                 corner_num++;   
             }                           
         }
@@ -194,7 +198,7 @@ void OdomEstimationClass::addSurfCostFactor(const pcl::PointCloud<pcl::PointXYZI
             if (planeValid)
             {
                 ceres::CostFunction *cost_function = new SurfNormAnalyticCostFunction(curr_point, norm, negative_OA_dot_norm);    
-                problem.AddResidualBlock(cost_function, loss_function, parameters);
+                problem.AddResidualBlock(cost_function, loss_function, parameters_xi);
 
                 surf_num++;
             }
