@@ -1,4 +1,8 @@
 # FLOAM 
+## 修改
+1、将优化参数从四元数改为李代数
+2、用sophus进行李群运算
+
 ## Fast LOAM (Lidar Odometry And Mapping)
 
 This work is an optimized version of A-LOAM and LOAM with the computational cost reduced by up to 3 times.
