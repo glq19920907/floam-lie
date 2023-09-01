@@ -1,6 +1,7 @@
 # FLOAM 
 ## 修改
 1、将优化参数从四元数改为李代数
+
 2、用sophus进行李群运算
 
 ## Fast LOAM (Lidar Odometry And Mapping)
